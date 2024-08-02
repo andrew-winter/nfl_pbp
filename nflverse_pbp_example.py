@@ -113,6 +113,22 @@ raw_pbp = concat_pbp(min_year=2004, max_year=max_year, dir=pbp_dir)
 
 
 # %%
+# Aggregate different stats
+#agg_funcs = {stat: ["mean", "max", "min", "count"] for stat in ["passing_yards", "rushing_yards"]}
+agg_funcs = {
+    "pass_attempt": ["count", "sum"],
+    "passing_yards": ["sum", "mean", "max"],
+    "rush_attempt": ["count", "sum"],
+    "rushing_yards": ["sum", "mean", "max"]
+}
+pd.pivot_table(raw_pbp,
+               values=["pass_attempt", "passing_yards", "rush_attempt", "rushing_yards"],
+               index=["season", "game_id"], aggfunc=agg_funcs).reset_index().reset_index()
+
+
+
+
+# %%
 # Columns to keep
 first_four_cols = ["season", "week", "game_id", "play_id"]
 numeric_cols = ["qtr", "drive", "down", "game_seconds_remaining", "quarter_end", "complete_pass", "incomplete_pass", "pass_length", "receiving_yards", "pass_attempt", "passing_yards", "pass", "rush_attempt", "rushing_yards", "rush"]
@@ -126,7 +142,6 @@ character_cols = ["passer", "receiver", "rusher", "posteam", "defteam", "season_
         .sort_values(by=["season", "week", "game_id", "play_id"], ascending=True)
         .to_csv(f"{pbp_dir}\pbp_2004-2023.csv", index=False)
 )
-"""
 
 kc_offense_bool = raw_pbp["posteam"] == "KC"
 kc_offense = (
@@ -135,14 +150,35 @@ kc_offense = (
         [first_four_cols + numeric_cols + character_cols]
         .loc[kc_offense_bool]
         .sort_values(by=["season", "week", "game_id", "play_id"], ascending=True))
+"""
+
+limited_pbp = (
+    raw_pbp
+        .copy()
+        [first_four_cols + numeric_cols + character_cols]
+        #.loc[kc_offense_bool]
+        .sort_values(by=["season", "week", "game_id", "play_id"], ascending=True))
 
 
 # %%
-kc_offense
+
+
+
+# %%
+# Split DataFrame into multiple csv files with row size
+n_files = 10
+n_rows = (len(limited_pbp.index) / n_files) + 1
+ 
+for file in range(n_files):
+    df = limited_pbp.iloc[n_rows * file: n_rows * (file + 1)]
+    df.to_csv(rf"C:\Users\ussoc\Documents\Technical\Python-projects\workflows\coalesce\explore\limited_20240801_i{row + 1}.csv", index=False)
+
 
 
 # %%
 # Save file
-#raw_pbp.to_csv(r"C:\Users\ussoc\Documents\Technical\Python-projects\workflows\coalesce\explore\raw.csv", index=False)
+limited_pbp.to_csv(r"C:\Users\ussoc\Documents\Technical\Python-projects\workflows\coalesce\explore\raw_20240801_v2.csv", index=False)
 
 
+
+# %%
